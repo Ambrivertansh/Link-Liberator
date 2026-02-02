@@ -101,4 +101,4 @@ def solve_link(target_url):
 
 # --- PART 3: TEST IT ---
 # Try it on Wikipedia first because it has predictable buttons
-solve_link("https://www.wikipedia.org/")
+solve_link("https://www.python.org/downloads/")
