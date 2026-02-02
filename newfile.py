@@ -3,7 +3,7 @@ import sys
 import time
 
 # ==========================================
-# PART 1: CLOUD INSTALLER
+# PART 1: CLOUD INSTALLER (Stealth Edition)
 # ==========================================
 def install_dependencies():
     print("⬇️ Downloading latest Google Chrome...")
@@ -13,8 +13,8 @@ def install_dependencies():
     os.system("apt-get update")
     os.system("apt-get install -y ./google-chrome-stable_current_amd64.deb")
     
-    print("🔌 Installing Selenium & Managers...")
-    os.system("pip install selenium webdriver-manager")
+    print("🔌 Installing Selenium & Stealth...")
+    os.system("pip install selenium webdriver-manager selenium-stealth")
 
 # Check for Colab
 try:
@@ -25,44 +25,71 @@ except ImportError:
     IN_COLAB = False
 
 # ==========================================
-# PART 2: THE LOGIC
+# PART 2: THE BOT LOGIC
 # ==========================================
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium_stealth import stealth 
 
 def solve_link(target_url):
-    print("\n🚀 Launching Headless Browser...")
+    print("\n🚀 Launching Stealth Browser...")
     
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--window-size=1920,1080')
-    options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+    options.add_argument("--disable-blink-features=AutomationControlled") 
     
     driver_path = ChromeDriverManager().install()
     service = Service(driver_path)
     driver = webdriver.Chrome(service=service, options=options)
 
+    # 🎭 Activate Stealth Mode (Bypasses Cloudflare)
+    stealth(driver,
+        languages=["en-US", "en"],
+        vendor="Google Inc.",
+        platform="Win32",
+        webgl_vendor="Intel Inc.",
+        renderer="Intel Iris OpenGL Engine",
+        fix_hairline=True,
+    )
+
     try:
         print(f"🔗 Visiting: {target_url}")
         driver.get(target_url)
         
-        # Loop for multiple steps (Verify -> Next -> Get Link)
-        for step in range(1, 5):
+        # Cloudflare Check
+        print("🛡️ Checking for Cloudflare...")
+        time.sleep(10)
+        
+        # Cloudflare Bypass Logic
+        if "Attention Required" in driver.title or "Just a moment" in driver.title:
+            print("⚠️ Cloudflare Detected! Attempting bypass...")
+            iframes = driver.find_elements(By.TAG_NAME, "iframe")
+            for frame in iframes:
+                try:
+                    driver.switch_to.frame(frame)
+                    checkbox = driver.find_element(By.XPATH, "//input[@type='checkbox']")
+                    checkbox.click()
+                    print("✅ Clicked Cloudflare Checkbox!")
+                    driver.switch_to.default_content()
+                    time.sleep(5)
+                except:
+                    driver.switch_to.default_content()
+
+        # Arolinks Button Logic
+        for step in range(1, 6):
             print(f"\n--- STEP {step} ---")
+            print("⏳ Waiting 12 seconds for ads...")
+            time.sleep(12)
             
-            # 1. WAIT
-            print("⏳ Waiting 15 seconds for timers...")
-            time.sleep(15)
-            
-            # 2. SCAN
             keywords = [
                 "verify", "next", "continue", "click here to continue", 
-                "generate link", "get link", "go to link", "download", "i am not a robot"
+                "generate link", "get link", "go to link", "download"
             ]
             
             found_button = False
@@ -83,7 +110,7 @@ def solve_link(target_url):
                             driver.execute_script("arguments[0].click();", element)
                             print("✅ CLICKED IT!")
                             found_button = True
-                            time.sleep(5)
+                            time.sleep(8) # Wait for reload
                             break 
                 except:
                     continue
@@ -91,14 +118,18 @@ def solve_link(target_url):
             if not found_button:
                 print("❌ No keywords found this step.")
             
-            # Check if finished
+            # CHECK IF WE REACHED THE GOAL
             current = driver.current_url
-            if "google" in current or "mediafire" in current or "drive" in current:
-                print("🎉 Destination Reached!")
+            if "herokuapp" in current or "code=" in current:
+                print("\n🎉 DESTINATION REACHED!")
+                print(f"🏁 Full URL: {current}")
+                
+                # --- THIS EXTRACTS THE CODE FOR YOU ---
+                if "code=" in current:
+                    extracted_code = current.split("code=")[1]
+                    print(f"\n💎 YOUR CODE IS: {extracted_code}")
+                    print(f"   (You can copy this directly!)")
                 break
-
-        print(f"\n🏁 Final Page URL: {driver.current_url}")
-        print(f"📄 Final Page Title: {driver.title}")
 
     except Exception as e:
         print(f"❌ Error: {e}")
@@ -106,16 +137,16 @@ def solve_link(target_url):
         driver.quit()
 
 # ==========================================
-# PART 3: USER INPUT (The Change)
+# PART 3: USER INPUT
 # ==========================================
 print("\n" + "="*40)
-print("   🔗 LINK LIBERATOR - READY")
+print("   🔗 LINK LIBERATOR (STEALTH MODE)")
 print("="*40 + "\n")
 
-# This line will create a text box in Google Colab
-user_link = input("👉 PASTE YOUR LINK HERE AND PRESS ENTER: ").strip()
+# This box will appear in Colab for you to paste your link
+user_link = input("👉 PASTE YOUR AROLINKS URL: ").strip()
 
 if len(user_link) > 5:
     solve_link(user_link)
 else:
-    print("❌ Invalid link. Please try again.")
+    print("❌ Invalid link.")
